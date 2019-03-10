@@ -5,15 +5,15 @@ Sony RC-S380 (NFC card reader) Driver for WebUSB written in TypeScript.
 ## How to install
 
 ```bash
-$ npm i webusb-rc-s380
+$ npm i rc_s380_driver
 # or
-$ yarn add webusb-rc-s380
+$ yarn add rc_s380_driver
 ```
 
 ## How to use
 
 ```TypeScript
-import { RCS380, ReceivedPacket } from 'webusb-rc-s380'
+import { RCS380, ReceivedPacket } from 'rc_s380_driver'
 
 class Sample {
     constructor(readonly rcs380: RCS380) {}
@@ -29,3 +29,9 @@ class Sample {
     }
 }
 ```
+
+## npm packate
+[rc-s380-driver](https://www.npmjs.com/package/rc_s380_driver)
+
+## License
+MIT
