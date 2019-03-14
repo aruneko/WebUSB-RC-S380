@@ -22,9 +22,15 @@ abstract class RCS380Packet extends Packet {
   }
 
   get dataLength(): number {
-    // 256bytesごとの分割受信になるからこれでいいはずだけど
-    // [5]だけ返すのはは嘘かもしれない
-    return this.payload[5]
+    // Bufferを作っておく
+    const buffer = new ArrayBuffer(2)
+    // 8bytesごとに書き込む
+    const octedView = new Uint8Array(buffer)
+    octedView[0] = this.payload[5]
+    octedView[1] = this.payload[6]
+    // それを16bytesとして読む
+    const view = new Uint16Array(buffer)
+    return view[0]
   }
 
   get dataLengthCheckSum(): number {
