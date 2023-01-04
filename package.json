@@ -57,7 +57,7 @@
     "@types/jest-diff": "^20.0.1",
     "@types/prettier": "^1.18.2",
     "@types/w3c-web-usb": "^1.0.3",
-    "jest": "^24.9.0",
+    "jest": "^29.3.1",
     "prettier": "^1.18.2",
     "ts-jest": "^29.0.3",
     "tslint": "^5.19.0",
