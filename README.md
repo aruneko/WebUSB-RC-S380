@@ -30,7 +30,7 @@ class Sample {
 }
 ```
 
-## npm packate
+## npm package
 [rc-s380-driver](https://www.npmjs.com/package/rc_s380_driver)
 
 ## License
