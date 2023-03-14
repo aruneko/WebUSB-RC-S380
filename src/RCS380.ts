@@ -150,15 +150,27 @@ export class RCS380 {
     return new SendPacket(command)
   }
 
-  private parseTimeout(timeoutS: number): Uint8Array {
+  private parseTimeout(timeout: number): Uint8Array {
     // タイムアウト指定パケット組み立て用バッファの確保(2bytes)
     const buffer = new ArrayBuffer(2)
     // 指定された計算式に従ってタイムアウト秒数を整数化
-    const hexTimeout = (Math.floor(timeoutS * 1000) + 1) * 10
+    const hexTimeout = Math.min(timeout, 0xffff)
     // リトルエンディアンでタイムアウト秒数を書き込む
     const view = new DataView(buffer)
     view.setUint16(0, hexTimeout, true)
     return new Uint8Array(buffer)
+  }
+
+  private parseTimeoutIn(timeoutS: number): Uint8Array {
+    if (timeoutS == 0) {
+      return this.parseTimeout(0)
+    } else {
+      return this.parseTimeout((Math.floor(timeoutS * 1000) + 1) * 10)
+    }
+  }
+
+  private parseTimeoutTg(timeoutS: number): Uint8Array {
+    return this.parseTimeout(Math.floor(timeoutS * 1000))
   }
 
   private async sendTypeBCommandAndReceiveResult(commandCode: number, rawCommand: Uint8Array): Promise<ReceivedPacket> {
@@ -195,7 +207,7 @@ export class RCS380 {
   }
 
   public async inCommRf(data: Uint8Array, timeoutS: number): Promise<ReceivedPacket> {
-    const timeout = this.parseTimeout(timeoutS)
+    const timeout = this.parseTimeoutIn(timeoutS)
     const command = new Uint8Array([...timeout, ...data])
     return this.sendTypeBCommandAndReceiveResult(0x04, command)
   }
@@ -220,7 +232,7 @@ export class RCS380 {
   }
 
   public async tgCommRf(data: Uint8Array, timeoutS: number): Promise<ReceivedPacket> {
-    const timeout = this.parseTimeout(timeoutS)
+    const timeout = this.parseTimeoutTg(timeoutS)
     const response = new Uint8Array([...this.tgCommHeader, ...timeout, ...data])
     return this.sendTypeBCommandAndReceiveResult(0x48, response)
   }
