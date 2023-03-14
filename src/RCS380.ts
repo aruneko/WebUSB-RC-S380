@@ -150,11 +150,11 @@ export class RCS380 {
     return new SendPacket(command)
   }
 
-  private parseTimeout(timeout: number): Uint8Array {
+  private parseTimeout(timeoutValue: number): Uint8Array {
     // タイムアウト指定パケット組み立て用バッファの確保(2bytes)
     const buffer = new ArrayBuffer(2)
     // 指定された計算式に従ってタイムアウト秒数を整数化
-    const hexTimeout = Math.min(timeout, 0xffff)
+    const hexTimeout = Math.min(timeoutValue, 0xffff)
     // リトルエンディアンでタイムアウト秒数を書き込む
     const view = new DataView(buffer)
     view.setUint16(0, hexTimeout, true)
