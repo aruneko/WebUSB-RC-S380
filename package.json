@@ -1,7 +1,7 @@
 {
   "name": "rc_s380_driver",
-  "version": "1.0.5",
-  "description": "Pasori RC-S380 Driver for WebUSB",
+  "version": "1.1.2",
+  "description": "PaSoRi RC-S380 Driver for WebUSB",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "files": [

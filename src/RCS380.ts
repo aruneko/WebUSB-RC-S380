@@ -3,7 +3,7 @@ import { AckPacket, FailurePacket, ReceivedPacket, SendPacket, SuccessPacket } f
 export class RCS380 {
   private ackPacket = new AckPacket()
   private maxReceiveSize = 290
-  readonly defaultProtocol = Uint8Array.of(
+  private readonly inSetDefaultProtocol = Uint8Array.of(
     0x00,
     0x18,
     0x01,
@@ -43,6 +43,50 @@ export class RCS380 {
     0x13,
     0x06
   )
+  private readonly tgSetDefaultProtocol = Uint8Array.of(
+    0x00,
+    0x01,
+    0x01,
+    0x01,
+    0x02,
+    0x07
+  )
+  private readonly tgCommHeader = Uint8Array.of(
+    0x00,
+    0x00,
+    0xff,
+    0xff,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00,
+    0x00
+  )
+
+  // 互換性のため
+  readonly defaultProtocol = this.inSetDefaultProtocol
   private frameWaitingTime = 2.474516
   private deltaFrameWaitingTime = 49152 / 13.56e6
   // デフォルトのタイムアウト時間
@@ -50,11 +94,11 @@ export class RCS380 {
 
   private constructor(
     readonly device: USBDevice
-  ) {}
+  ) { }
 
   public static async connect(): Promise<RCS380> {
-    // ベンダーIDでRC-S380を特定
-    const filter: USBDeviceFilter = {vendorId: 0x054c}
+    // ベンダーIDとプロダクトIDでRC-S380を特定
+    const filter: USBDeviceFilter = { vendorId: 0x054c, productId: 0x06c3 }
     const options: USBDeviceRequestOptions = {
       filters: [filter]
     }
@@ -106,15 +150,27 @@ export class RCS380 {
     return new SendPacket(command)
   }
 
-  private parseTimeout(timeoutMs: number): Uint8Array {
+  private parseTimeout(timeoutValue: number): Uint8Array {
     // タイムアウト指定パケット組み立て用バッファの確保(2bytes)
     const buffer = new ArrayBuffer(2)
     // 指定された計算式に従ってタイムアウト秒数を整数化
-    const hexTimeout = (Math.floor(timeoutMs * 1000) + 1) * 10
+    const hexTimeout = Math.min(timeoutValue, 0xffff)
     // リトルエンディアンでタイムアウト秒数を書き込む
     const view = new DataView(buffer)
     view.setUint16(0, hexTimeout, true)
     return new Uint8Array(buffer)
+  }
+
+  private parseTimeoutIn(timeoutS: number): Uint8Array {
+    if (timeoutS === 0) {
+      return this.parseTimeout(0)
+    } else {
+      return this.parseTimeout((Math.floor(timeoutS * 1000) + 1) * 10)
+    }
+  }
+
+  private parseTimeoutTg(timeoutS: number): Uint8Array {
+    return this.parseTimeout(Math.floor(timeoutS * 1000))
   }
 
   private async sendTypeBCommandAndReceiveResult(commandCode: number, rawCommand: Uint8Array): Promise<ReceivedPacket> {
@@ -150,16 +206,41 @@ export class RCS380 {
     await this.sendTypeBCommandAndReceiveResult(0x02, protocol)
   }
 
-  public async inCommRf(data: Uint8Array, timeoutMs: number): Promise<ReceivedPacket> {
-    const timeout = this.parseTimeout(timeoutMs)
-    const command = Uint8Array.of(...timeout, ...data)
+  public async inCommRf(data: Uint8Array, timeoutS: number): Promise<ReceivedPacket> {
+    const timeout = this.parseTimeoutIn(timeoutS)
+    const command = new Uint8Array([...timeout, ...data])
     return this.sendTypeBCommandAndReceiveResult(0x04, command)
   }
 
-  public async sendPreparationCommands(rf: Uint8Array, protocol: Uint8Array) {
+  public async sendInPreparationCommands(rf: Uint8Array, protocol: Uint8Array) {
     await this.inSetRf(rf)
-    await this.inSetProtocol(this.defaultProtocol)
+    await this.inSetProtocol(this.inSetDefaultProtocol)
     await this.inSetProtocol(protocol)
+  }
+
+  // 互換性のため
+  public async sendPreparationCommands(rf: Uint8Array, protocol: Uint8Array) {
+    await this.sendInPreparationCommands(rf, protocol)
+  }
+
+  public async tgSetRf(rf: Uint8Array) {
+    await this.sendTypeBCommandAndReceiveResult(0x40, rf)
+  }
+
+  public async tgSetProtocol(protocol: Uint8Array) {
+    await this.sendTypeBCommandAndReceiveResult(0x42, protocol)
+  }
+
+  public async tgCommRf(data: Uint8Array, timeoutS: number): Promise<ReceivedPacket> {
+    const timeout = this.parseTimeoutTg(timeoutS)
+    const response = new Uint8Array([...this.tgCommHeader, ...timeout, ...data])
+    return this.sendTypeBCommandAndReceiveResult(0x48, response)
+  }
+
+  public async sendTgPreparationCommands(rf: Uint8Array, protocol: Uint8Array) {
+    await this.tgSetRf(rf)
+    await this.tgSetProtocol(this.tgSetDefaultProtocol)
+    await this.tgSetProtocol(protocol)
   }
 
   public async initDevice() {
