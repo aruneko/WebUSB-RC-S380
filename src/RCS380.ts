@@ -162,7 +162,7 @@ export class RCS380 {
   }
 
   private parseTimeoutIn(timeoutS: number): Uint8Array {
-    if (timeoutS == 0) {
+    if (timeoutS === 0) {
       return this.parseTimeout(0)
     } else {
       return this.parseTimeout((Math.floor(timeoutS * 1000) + 1) * 10)
