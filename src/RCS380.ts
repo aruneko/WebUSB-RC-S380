@@ -86,7 +86,7 @@ export class RCS380 {
   )
 
   // 互換性のため
-  readonly setDefaultProtocol = this.inSetDefaultProtocol
+  readonly defaultProtocol = this.inSetDefaultProtocol
   private frameWaitingTime = 2.474516
   private deltaFrameWaitingTime = 49152 / 13.56e6
   // デフォルトのタイムアウト時間
